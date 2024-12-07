@@ -62,7 +62,7 @@ class CausalSelfAttention(nn.Module):
         self.dropout = config.dropout
 
         self.flashattention = mx.fast.scaled_dot_product_attention
-        self.scale = 1.0 / np.sqrt(768)
+        self.scale = 1.0 / np.sqrt(self.n_embd)
         
     def __call__(self, x):
         B, T, C = x.shape # batch size, sequence length, embedding dimensionality (n_embd)
@@ -74,7 +74,6 @@ class CausalSelfAttention(nn.Module):
         # k = rearrange(k, 'b t (h c2) -> b h t c2', h=self.n_head)
         # q = rearrange(q, 'b t (h c2) -> b h t c2', h=self.n_head)
         # v = rearrange(v, 'b t (h c2) -> b h t c2', h=self.n_head)
-
 
         y = self.flashattention(q, k, v, scale=self.scale)
         y = y.transpose(0, 2, 1, 3).reshape(B, T, C)
@@ -151,7 +150,7 @@ class GPT(nn.Module):
         
         # forward the GPT model itself
         tok_emb = self.wte(idx)
-        pos_emb = self.wpe(idx)
+        pos_emb = self.wpe(pos)
         x = self.drop(tok_emb + pos_emb)
         for block in self.h:
             x = block(x)
@@ -180,7 +179,7 @@ class GPT(nn.Module):
         """
         for _ in range(max_new_tokens):
             idx_cond = idx if idx.shape[1] <= self.config.block_size else idx[:, -self.config.block_size:]
-            logits, _ = self(idx_cond)
+            logits, _ = self(idx_cond, train=False)
             logits = logits[:, -1, :] / temperature
             if top_k is not None:
                 v, _ = mx.topk(logits, min(top_k, logits.shape[-1]))
