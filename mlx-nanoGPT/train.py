@@ -34,7 +34,7 @@ implement way later:
 # default config values designed to train a gpt2 (124M) on OpenWebText
 # I/O
 out_dir = 'out'
-eval_interval = 2
+eval_interval = 2 # 1000, 2 for testing
 log_interval = 1
 eval_iters = 200
 eval_only = False # if True, script exits right after the first eval
